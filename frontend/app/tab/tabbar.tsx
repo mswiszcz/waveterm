@@ -638,7 +638,6 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
                 </div>
             )}
             <WaveAIButton divRef={waveAIButtonRef} />
-            <WidgetsSidebarButton divRef={widgetsSidebarButtonRef} />
             <Tooltip
                 content="Workspace Switcher"
                 placement="bottom"
@@ -691,6 +690,7 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
             </button>
             <div className="flex-1" />
             <div ref={rightContainerRef} className="flex flex-row gap-1 items-end">
+                <WidgetsSidebarButton divRef={widgetsSidebarButtonRef} />
                 <UpdateStatusBanner />
                 <div
                     className="h-full shrink-0 z-window-drag"
