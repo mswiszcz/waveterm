@@ -732,6 +732,11 @@ function registerGlobalKeys() {
         WorkspaceLayoutModel.getInstance().setAIPanelVisible(!currentVisible);
         return true;
     });
+    globalKeyMap.set("Cmd:b", () => {
+        const current = WorkspaceLayoutModel.getInstance().getWidgetsSidebarVisible();
+        WorkspaceLayoutModel.getInstance().setWidgetsSidebarVisible(!current);
+        return true;
+    });
     const allKeys = Array.from(globalKeyMap.keys());
     // special case keys, handled by web view
     allKeys.push("Cmd:l", "Cmd:r", "Cmd:ArrowRight", "Cmd:ArrowLeft", "Cmd:o");
