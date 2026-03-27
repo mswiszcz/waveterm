@@ -461,6 +461,15 @@ export class WaveBrowserWindow extends BaseWindow {
             console.log("initializing a new tab", primaryStartupTab ? "(primary startup)" : "");
             await this.initializeTab(tabView, primaryStartupTab);
             this.finalizePositioning();
+        } else if (tabView.isWaveReady) {
+            if (tabView.savedInitOpts?.windowId !== this.waveWindowId) {
+                console.log("reusing wave-ready tab with stale windowId, reinitializing", tabView.waveTabId);
+                tabView.savedInitOpts = { ...tabView.savedInitOpts, windowId: this.waveWindowId };
+                tabView.webContents.send("wave-init", tabView.savedInitOpts);
+            } else {
+                console.log("reusing wave-ready tab, skipping reinit", tabView.waveTabId);
+            }
+            this.finalizePositioning();
         } else {
             console.log("reusing an existing tab, calling wave-init", tabView.waveTabId);
             tabView.webContents.send("wave-init", tabView.savedInitOpts); // reinit
