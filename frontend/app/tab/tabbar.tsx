@@ -75,6 +75,30 @@ const WaveAIButton = memo(({ divRef }: { divRef?: React.RefObject<HTMLDivElement
 });
 WaveAIButton.displayName = "WaveAIButton";
 
+const WidgetsSidebarButton = memo(({ divRef }: { divRef?: React.RefObject<HTMLDivElement> }) => {
+    const widgetsSidebarVisible = useAtomValue(WorkspaceLayoutModel.getInstance().widgetsSidebarVisibleAtom);
+
+    const onClick = () => {
+        const current = WorkspaceLayoutModel.getInstance().getWidgetsSidebarVisible();
+        WorkspaceLayoutModel.getInstance().setWidgetsSidebarVisible(!current);
+    };
+
+    return (
+        <Tooltip
+            content="Toggle Widgets Sidebar"
+            placement="bottom"
+            hideOnClick
+            divClassName={`flex h-[22px] px-3.5 justify-end mb-1 items-center rounded-md mr-1 box-border cursor-pointer bg-hover hover:bg-hoverbg transition-colors text-[12px] ${widgetsSidebarVisible ? "text-accent" : "text-secondary"}`}
+            divStyle={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            divOnClick={onClick}
+            divRef={divRef}
+        >
+            <i className="fa fa-bars" />
+        </Tooltip>
+    );
+});
+WidgetsSidebarButton.displayName = "WidgetsSidebarButton";
+
 function strArrayIsEqual(a: string[], b: string[]) {
     // null check
     if (a == null && b == null) {
@@ -123,6 +147,7 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
     const rightContainerRef = useRef<HTMLDivElement>(null);
     const workspaceSwitcherRef = useRef<HTMLDivElement>(null);
     const waveAIButtonRef = useRef<HTMLDivElement>(null);
+    const widgetsSidebarButtonRef = createRef<HTMLDivElement>();
     const appMenuButtonRef = useRef<HTMLDivElement>(null);
     const tabWidthRef = useRef<number>(TabDefaultWidth);
     const scrollableRef = useRef<boolean>(false);
@@ -613,6 +638,7 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
                 </div>
             )}
             <WaveAIButton divRef={waveAIButtonRef} />
+            <WidgetsSidebarButton divRef={widgetsSidebarButtonRef} />
             <Tooltip
                 content="Workspace Switcher"
                 placement="bottom"
@@ -675,4 +701,4 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
     );
 });
 
-export { TabBar, WaveAIButton };
+export { TabBar, WaveAIButton, WidgetsSidebarButton };
