@@ -39,3 +39,5 @@ test-results.xml
 docsite/
 
 .kilo-format-temp-*
+.superpowers
+docs/superpowers
