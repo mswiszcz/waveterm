@@ -1,4 +1,5 @@
 .task
+.worktrees
 frontend/dist
 dist/
 dist-dev/
