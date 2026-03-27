@@ -17,6 +17,27 @@ VS Code-style ordered array. Only overrides — defaults stay hardcoded in `keym
 ]
 ```
 
+### Key Syntax Reference
+
+The default `keybindings.json` file ships with a comment block (using `//` keys that are ignored by the parser) documenting the key syntax:
+
+- **Modifiers:** `Cmd` (macOS Command / Windows-Linux Meta), `Ctrl`, `Shift`, `Alt` (macOS Option), `Meta`
+- **Separators:** Modifiers and keys are joined with `:` (e.g. `Cmd:Shift:t`)
+- **Special keys:** `ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`, `Home`, `End`, `PageUp`, `PageDown`, `Escape`, `Enter`, `Tab`, `Backspace`, `Delete`, `Space`
+- **Letter/number keys:** Lowercase letters (`a`–`z`), digits (`0`–`9`)
+- **Punctuation:** Use the key name as printed (e.g. `[`, `]`, `/`, `.`, `,`)
+- **Platform note:** `Cmd` maps to Command on macOS and Meta on Windows/Linux
+
+Example default file content:
+```json
+[
+  // Key syntax: "Modifier:Modifier:Key" — e.g. "Cmd:Shift:t", "Ctrl:ArrowUp"
+  // Modifiers: Cmd (macOS) / Meta (Win/Linux), Ctrl, Shift, Alt (macOS Option)
+  // Special keys: ArrowUp/Down/Left/Right, Home, End, Escape, Enter, Tab, Space, Backspace, Delete
+  // Prefix command with "-" to unbind a default keybinding
+]
+```
+
 ### Conventions
 
 - `command` uses namespaced action IDs (e.g. `tab:new`, `block:splitRight`)
