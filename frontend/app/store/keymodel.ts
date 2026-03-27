@@ -840,6 +840,14 @@ function buildKeyMaps(userOverrides: KeybindingEntry[]): void {
 
     // 2. Apply user overrides in order (last wins)
     for (const override of userOverrides) {
+        if (!override.command || typeof override.command !== "string") {
+            console.warn("Skipping keybinding entry with missing/invalid command");
+            continue;
+        }
+        if (override.key != null && typeof override.key !== "string") {
+            console.warn(`Skipping keybinding entry with invalid key type for command: ${override.command}`);
+            continue;
+        }
         const commandId = override.command.startsWith("-") ? override.command.substring(1) : override.command;
         if (override.command.startsWith("-") || override.key == null) {
             // Unbind: remove the action
