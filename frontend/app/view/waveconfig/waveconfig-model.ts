@@ -65,6 +65,13 @@ function makeConfigFiles(isWindows: boolean): ConfigFile[] {
             hasJsonView: true,
         },
         {
+            name: "Keybindings",
+            path: "keybindings.json",
+            language: "json",
+            description: "Custom keyboard shortcuts",
+            hasJsonView: true,
+        },
+        {
             name: "Connections",
             path: "connections.json",
             language: "json",
