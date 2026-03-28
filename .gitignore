@@ -1,4 +1,5 @@
 .task
+.worktrees
 frontend/dist
 dist/
 dist-dev/
@@ -39,3 +40,6 @@ test-results.xml
 docsite/
 
 .kilo-format-temp-*
+.superpowers
+docs/superpowers
+.claude
