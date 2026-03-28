@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"runtime"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -26,11 +27,14 @@ var badgeCmd = &cobra.Command{
 }
 
 var (
-	badgeColor    string
-	badgePriority float64
-	badgeClear    bool
-	badgeBeep     bool
-	badgePid      int
+	badgeColor       string
+	badgePriority    float64
+	badgeClear       bool
+	badgeBeep        bool
+	badgeSound       string
+	badgeBorder      bool
+	badgeBorderColor string
+	badgePid         int
 )
 
 func init() {
@@ -38,7 +42,10 @@ func init() {
 	badgeCmd.Flags().StringVar(&badgeColor, "color", "", "badge color")
 	badgeCmd.Flags().Float64Var(&badgePriority, "priority", 10, "badge priority")
 	badgeCmd.Flags().BoolVar(&badgeClear, "clear", false, "clear the badge")
-	badgeCmd.Flags().BoolVar(&badgeBeep, "beep", false, "play system bell sound")
+	badgeCmd.Flags().BoolVar(&badgeBeep, "beep", false, "play system bell sound (alias for --sound system)")
+	badgeCmd.Flags().StringVar(&badgeSound, "sound", "", "play a sound preset (system, chime, ping, gentle) or custom .mp3 filename from ~/.waveterm/sounds/")
+	badgeCmd.Flags().BoolVar(&badgeBorder, "border", false, "show a persistent border highlight on the block")
+	badgeCmd.Flags().StringVar(&badgeBorderColor, "border-color", "", "border color override (defaults to --color, then #fbbf24)")
 	badgeCmd.Flags().IntVar(&badgePid, "pid", 0, "watch a pid and automatically clear the badge when it exits (default priority 5)")
 }
 
@@ -52,6 +59,19 @@ func badgeRun(cmd *cobra.Command, args []string) (rtnErr error) {
 	}
 	if badgePid > 0 && !cmd.Flags().Changed("priority") {
 		badgePriority = 5
+	}
+
+	// --beep is an alias for --sound system
+	resolvedSound := badgeSound
+	if badgeBeep && resolvedSound == "" {
+		resolvedSound = "system"
+	}
+
+	// Validate custom sound filename (no path traversal)
+	if resolvedSound != "" && resolvedSound != "system" {
+		if strings.Contains(resolvedSound, "/") || strings.Contains(resolvedSound, "\\") || strings.Contains(resolvedSound, "..") {
+			return fmt.Errorf("custom sound filename must not contain path separators or '..'")
+		}
 	}
 
 	oref, err := resolveBlockArg()
@@ -68,6 +88,10 @@ func badgeRun(cmd *cobra.Command, args []string) (rtnErr error) {
 	if badgeClear {
 		eventData.Clear = true
 	} else {
+		eventData.Sound = resolvedSound
+		eventData.Border = badgeBorder
+		eventData.BorderColor = badgeBorderColor
+
 		icon := "circle-small"
 		if len(args) > 0 {
 			icon = args[0]
@@ -94,13 +118,6 @@ func badgeRun(cmd *cobra.Command, args []string) (rtnErr error) {
 	err = wshclient.EventPublishCommand(RpcClient, event, &wshrpc.RpcOpts{NoResponse: true})
 	if err != nil {
 		return fmt.Errorf("publishing badge event: %v", err)
-	}
-
-	if badgeBeep {
-		err = wshclient.ElectronSystemBellCommand(RpcClient, &wshrpc.RpcOpts{Route: "electron"})
-		if err != nil {
-			return fmt.Errorf("playing system bell: %v", err)
-		}
 	}
 
 	if badgePid > 0 && eventData.Badge != nil {
