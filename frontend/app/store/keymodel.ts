@@ -28,6 +28,7 @@ import { isWindows } from "@/util/platformutil";
 import { CHORD_TIMEOUT } from "@/util/sharedconst";
 import { fireAndForget } from "@/util/util";
 import * as jotai from "jotai";
+import { openCommandPalette } from "@/app/store/commandpalette";
 import { modalsModel } from "./modalmodel";
 import { isBuilderWindow, isTabWindow } from "./windowtype";
 
@@ -38,7 +39,7 @@ type KeybindingEntry = {
     command: string;
 };
 
-type ActionDef = {
+export type ActionDef = {
     id: string;
     defaultKeys: string[];
     handler: KeyHandler;
@@ -805,6 +806,14 @@ const defaultActions: ActionDef[] = [
             return true;
         },
     },
+    {
+        id: "app:commandpalette",
+        defaultKeys: ["Cmd:p"],
+        handler: () => {
+            openCommandPalette();
+            return true;
+        },
+    },
     // Numbered tab/block switch keys (1-9)
     ...Array.from({ length: 9 }, (_, i) => {
         const idx = i + 1;
@@ -995,11 +1004,16 @@ function getAllGlobalKeyBindings(): string[] {
     return globalKeyBindings.map((e) => e.key);
 }
 
+function getActionDefs(): ActionDef[] {
+    return defaultActions;
+}
+
 export {
     appHandleKeyDown,
     buildKeyMaps,
     disableGlobalKeybindings,
     enableGlobalKeybindings,
+    getActionDefs,
     getSimpleControlShiftAtom,
     globalRefocus,
     globalRefocusWithTimeout,
