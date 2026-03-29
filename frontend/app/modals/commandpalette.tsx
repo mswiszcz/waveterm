@@ -14,6 +14,7 @@ import {
     sortByRecency,
 } from "@/app/store/commandpalette";
 import { getActionDefs } from "@/app/store/keymodel";
+import { WorkspaceService } from "@/app/store/services";
 import { useAtomValue } from "jotai";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./commandpalette.scss";
@@ -60,6 +61,30 @@ function getAppCommandItems(): CommandPaletteItem[] {
     return items;
 }
 
+async function fetchWorkspaceItems(): Promise<CommandPaletteItem[]> {
+    const workspaceList = await WorkspaceService.ListWorkspaces();
+    if (!workspaceList) {
+        return [];
+    }
+    const items: CommandPaletteItem[] = [];
+    for (const entry of workspaceList) {
+        const workspace = await WorkspaceService.GetWorkspace(entry.workspaceid);
+        if (!workspace) {
+            continue;
+        }
+        const name = workspace.name || "Untitled Workspace";
+        items.push({
+            id: `workspace:${workspace.oid}`,
+            label: name,
+            category: "workspace",
+            handler: () => {
+                (window as any).api.switchWorkspace(workspace.oid);
+            },
+        });
+    }
+    return items;
+}
+
 const CommandPalette = memo(() => {
     const [searchValue, setSearchValue] = useState("");
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -67,6 +92,11 @@ const CommandPalette = memo(() => {
     const resultsRef = useRef<HTMLDivElement>(null);
     const customCommands = useAtomValue(commandsConfigAtom);
     const history = useAtomValue(paletteHistoryAtom);
+    const [workspaceItems, setWorkspaceItems] = useState<CommandPaletteItem[]>([]);
+
+    useEffect(() => {
+        fetchWorkspaceItems().then(setWorkspaceItems);
+    }, []);
 
     const allItems = useMemo((): CommandPaletteItem[] => {
         const items: CommandPaletteItem[] = [];
@@ -81,8 +111,9 @@ const CommandPalette = memo(() => {
                 },
             });
         }
+        items.push(...workspaceItems);
         return items;
-    }, [customCommands]);
+    }, [customCommands, workspaceItems]);
 
     const { prefix, query } = parseSearchInput(searchValue);
     const filtered = filterItems(allItems, prefix, query);
