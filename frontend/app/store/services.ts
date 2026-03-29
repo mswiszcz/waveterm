@@ -101,6 +101,11 @@ export class ObjectServiceType {
     }
 
     // @returns object updates
+    MoveBlock(blockId: string, destTabId: string): Promise<void> {
+        return callBackendService(this?.waveEnv, "object", "MoveBlock", Array.from(arguments))
+    }
+
+    // @returns object updates
     UpdateObject(waveObj: WaveObj, returnUpdates: boolean): Promise<void> {
         return callBackendService(this?.waveEnv, "object", "UpdateObject", Array.from(arguments))
     }

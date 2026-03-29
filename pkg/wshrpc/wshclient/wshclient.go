@@ -634,6 +634,12 @@ func MessageCommand(w *wshutil.WshRpc, data wshrpc.CommandMessageData, opts *wsh
 	return err
 }
 
+// command "moveblock", wshserver.MoveBlockCommand
+func MoveBlockCommand(w *wshutil.WshRpc, data wshrpc.CommandMoveBlockData, opts *wshrpc.RpcOpts) error {
+	_, err := sendRpcRequestCallHelper[any](w, "moveblock", data, opts)
+	return err
+}
+
 // command "networkonline", wshserver.NetworkOnlineCommand
 func NetworkOnlineCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (bool, error) {
 	resp, err := sendRpcRequestCallHelper[bool](w, "networkonline", nil, opts)

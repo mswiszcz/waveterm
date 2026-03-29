@@ -505,6 +505,12 @@ declare global {
         message: string;
     };
 
+    // wshrpc.CommandMoveBlockData
+    type CommandMoveBlockData = {
+        blockid: string;
+        desttabid: string;
+    };
+
     // wshrpc.CommandPublishAppData
     type CommandPublishAppData = {
         appid: string;
