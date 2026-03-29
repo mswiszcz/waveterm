@@ -502,6 +502,23 @@ func (ws *WshServer) DeleteBlockCommand(ctx context.Context, data wshrpc.Command
 	return nil
 }
 
+func (ws *WshServer) MoveBlockCommand(ctx context.Context, data wshrpc.CommandMoveBlockData) error {
+	if data.BlockId == "" {
+		return fmt.Errorf("blockid is required")
+	}
+	if data.DestTabId == "" {
+		return fmt.Errorf("desttabid is required")
+	}
+	ctx = waveobj.ContextWithUpdates(ctx)
+	err := wcore.MoveBlock(ctx, data.BlockId, data.DestTabId)
+	if err != nil {
+		return fmt.Errorf("error moving block: %w", err)
+	}
+	updates := waveobj.ContextGetUpdatesRtn(ctx)
+	wps.Broker.SendUpdateEvents(updates)
+	return nil
+}
+
 func (ws *WshServer) WaitForRouteCommand(ctx context.Context, data wshrpc.CommandWaitForRouteData) (bool, error) {
 	waitCtx, cancelFn := context.WithTimeout(ctx, time.Duration(data.WaitMs)*time.Millisecond)
 	defer cancelFn()

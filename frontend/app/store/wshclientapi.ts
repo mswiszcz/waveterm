@@ -642,6 +642,12 @@ export class RpcApiType {
         return client.wshRpcCall("message", data, opts);
     }
 
+    // command "moveblock" [call]
+    MoveBlockCommand(client: WshClient, data: CommandMoveBlockData, opts?: RpcOpts): Promise<void> {
+        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "moveblock", data, opts);
+        return client.wshRpcCall("moveblock", data, opts);
+    }
+
     // command "networkonline" [call]
     NetworkOnlineCommand(client: WshClient, opts?: RpcOpts): Promise<boolean> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "networkonline", null, opts);

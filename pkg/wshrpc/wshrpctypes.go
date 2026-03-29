@@ -59,6 +59,7 @@ type WshRpcInterface interface {
 	CreateSubBlockCommand(ctx context.Context, data CommandCreateSubBlockData) (waveobj.ORef, error)
 	DeleteBlockCommand(ctx context.Context, data CommandDeleteBlockData) error
 	DeleteSubBlockCommand(ctx context.Context, data CommandDeleteBlockData) error
+	MoveBlockCommand(ctx context.Context, data CommandMoveBlockData) error
 	WaitForRouteCommand(ctx context.Context, data CommandWaitForRouteData) (bool, error)
 
 	EventPublishCommand(ctx context.Context, data wps.WaveEvent) error
@@ -336,6 +337,11 @@ type CommandWaitForRouteData struct {
 
 type CommandDeleteBlockData struct {
 	BlockId string `json:"blockid"`
+}
+
+type CommandMoveBlockData struct {
+	BlockId   string `json:"blockid"`
+	DestTabId string `json:"desttabid"`
 }
 
 type CommandEventReadHistoryData struct {

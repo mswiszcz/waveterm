@@ -12,8 +12,10 @@ import { ConnectionButton } from "@/app/block/connectionbutton";
 import { DurableSessionFlyover } from "@/app/block/durable-session-flyover";
 import { getBlockBadgeAtom } from "@/app/store/badge";
 import { recordTEvent, refocusNode } from "@/app/store/global";
+import { atoms } from "@/app/store/global-atoms";
 import { globalStore } from "@/app/store/jotaiStore";
 import { uxCloseBlock } from "@/app/store/keymodel";
+import { ClientService, ObjectService, WorkspaceService } from "@/app/store/services";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { useWaveEnv } from "@/app/waveenv/waveenv";
 import { IconButton } from "@/element/iconbutton";
@@ -25,7 +27,83 @@ import * as React from "react";
 import { BlockEnv } from "./blockenv";
 import { BlockFrameProps } from "./blocktypes";
 
-function handleHeaderContextMenu(
+async function buildMoveToSubmenu(blockId: string): Promise<ContextMenuItem[]> {
+    const workspaceList = await WorkspaceService.ListWorkspaces();
+    if (!workspaceList || workspaceList.length === 0) {
+        return [];
+    }
+
+    const currentWorkspaceId = globalStore.get(atoms.workspaceId);
+    const currentTabId = globalStore.get(atoms.staticTabId);
+
+    type WorkspaceWithData = {
+        workspaceId: string;
+        workspace: Workspace;
+        isCurrent: boolean;
+    };
+
+    const workspacesWithData: WorkspaceWithData[] = [];
+    for (const entry of workspaceList) {
+        const workspace = await WorkspaceService.GetWorkspace(entry.workspaceid);
+        if (!workspace) continue;
+        workspacesWithData.push({
+            workspaceId: entry.workspaceid,
+            workspace,
+            isCurrent: entry.workspaceid === currentWorkspaceId,
+        });
+    }
+
+    // Sort: current workspace first
+    workspacesWithData.sort((a, b) => {
+        if (a.isCurrent && !b.isCurrent) return -1;
+        if (!a.isCurrent && b.isCurrent) return 1;
+        return 0;
+    });
+
+    const submenu: ContextMenuItem[] = [];
+
+    for (const ws of workspacesWithData) {
+        const tabItems: ContextMenuItem[] = [];
+        const workspace = ws.workspace;
+
+        for (const tabId of workspace.tabids) {
+            const tab = await ClientService.GetTab(tabId);
+            const isCurrent = tabId === currentTabId;
+            tabItems.push({
+                label: isCurrent ? `${tab?.name ?? tabId} (current)` : (tab?.name ?? tabId),
+                enabled: !isCurrent,
+                click: () => {
+                    util.fireAndForget(async () => {
+                        await ObjectService.MoveBlock(blockId, tabId);
+                    });
+                },
+            });
+        }
+
+        // Add separator and "+ New Tab" entry
+        tabItems.push({ type: "separator" });
+        tabItems.push({
+            label: "+ New Tab",
+            click: () => {
+                util.fireAndForget(async () => {
+                    const newTabId = await WorkspaceService.CreateTab(ws.workspaceId, "", false);
+                    await ObjectService.MoveBlock(blockId, newTabId);
+                });
+            },
+        });
+
+        const name = workspace.name ?? "Workspace";
+        submenu.push({
+            label: name,
+            type: "submenu",
+            submenu: tabItems,
+        });
+    }
+
+    return submenu;
+}
+
+async function handleHeaderContextMenu(
     e: React.MouseEvent<HTMLDivElement>,
     blockId: string,
     viewModel: ViewModel,
@@ -52,6 +130,23 @@ function handleHeaderContextMenu(
     ];
     const extraItems = viewModel?.getSettingsMenuItems?.();
     if (extraItems && extraItems.length > 0) menu.push({ type: "separator" }, ...extraItems);
+    // Build "Move to..." submenu
+    let moveToSubmenu: ContextMenuItem[] = [];
+    try {
+        moveToSubmenu = await buildMoveToSubmenu(blockId);
+    } catch (e) {
+        console.error("error building move-to submenu:", e);
+    }
+    if (moveToSubmenu.length > 0) {
+        menu.push(
+            { type: "separator" },
+            {
+                label: "Move to...",
+                type: "submenu",
+                submenu: moveToSubmenu,
+            }
+        );
+    }
     menu.push(
         { type: "separator" },
         {

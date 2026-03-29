@@ -190,6 +190,120 @@ func DeleteBlock(ctx context.Context, blockId string, recursive bool) error {
 	return nil
 }
 
+func MoveBlock(ctx context.Context, blockId string, destTabId string) error {
+	block, err := wstore.DBGet[*waveobj.Block](ctx, blockId)
+	if err != nil {
+		return fmt.Errorf("error getting block: %w", err)
+	}
+	if block == nil {
+		return fmt.Errorf("block not found: %q", blockId)
+	}
+
+	// Extract source tab from ParentORef
+	parentORef := waveobj.ParseORefNoErr(block.ParentORef)
+	if parentORef == nil || parentORef.OType != waveobj.OType_Tab {
+		return fmt.Errorf("block %q does not have a tab parent", blockId)
+	}
+	srcTabId := parentORef.OID
+
+	if srcTabId == destTabId {
+		return fmt.Errorf("block is already in destination tab")
+	}
+
+	// Move block between tabs atomically
+	err = wstore.WithTx(ctx, func(tx *wstore.TxWrap) error {
+		srcTab, err := wstore.DBGet[*waveobj.Tab](tx.Context(), srcTabId)
+		if err != nil || srcTab == nil {
+			return fmt.Errorf("source tab not found: %q", srcTabId)
+		}
+		destTab, err := wstore.DBGet[*waveobj.Tab](tx.Context(), destTabId)
+		if err != nil || destTab == nil {
+			return fmt.Errorf("destination tab not found: %q", destTabId)
+		}
+
+		// Remove from source tab
+		srcTab.BlockIds = utilfn.RemoveElemFromSlice(srcTab.BlockIds, blockId)
+		// Add to destination tab
+		destTab.BlockIds = append(destTab.BlockIds, blockId)
+		// Update block's parent reference
+		block.ParentORef = waveobj.MakeORef(waveobj.OType_Tab, destTabId).String()
+
+		wstore.DBUpdate(tx.Context(), block)
+		wstore.DBUpdate(tx.Context(), srcTab)
+		wstore.DBUpdate(tx.Context(), destTab)
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("error moving block: %w", err)
+	}
+
+	// Re-fetch source tab to check remaining blocks
+	srcTab, err := wstore.DBGet[*waveobj.Tab](ctx, srcTabId)
+	if err != nil {
+		log.Printf("MoveBlock: warning: could not re-fetch source tab %s: %v", srcTabId, err)
+	}
+
+	// Always queue destination insert action
+	err = QueueLayoutActionForTab(ctx, destTabId, waveobj.LayoutActionData{
+		ActionType: LayoutActionDataType_Insert,
+		BlockId:    blockId,
+	})
+	if err != nil {
+		log.Printf("MoveBlock: warning: could not queue layout insert for dest tab %s: %v", destTabId, err)
+	}
+
+	if srcTab != nil && len(srcTab.BlockIds) > 0 {
+		// Source tab still has blocks: queue remove action
+		err = QueueLayoutActionForTab(ctx, srcTabId, waveobj.LayoutActionData{
+			ActionType: LayoutActionDataType_Remove,
+			BlockId:    blockId,
+		})
+		if err != nil {
+			log.Printf("MoveBlock: warning: could not queue layout remove for source tab %s: %v", srcTabId, err)
+		}
+	} else if srcTab != nil && len(srcTab.BlockIds) == 0 {
+		// Source tab is empty: delete it (no src layout action needed since layout is deleted with tab)
+		srcWorkspaceId, err := wstore.DBFindWorkspaceForTabId(ctx, srcTabId)
+		if err != nil {
+			return fmt.Errorf("error finding workspace for source tab: %w", err)
+		}
+		destWorkspaceId, err := wstore.DBFindWorkspaceForTabId(ctx, destTabId)
+		if err != nil {
+			return fmt.Errorf("error finding workspace for dest tab: %w", err)
+		}
+
+		_, err = DeleteTab(ctx, srcWorkspaceId, srcTabId, true)
+		if err != nil {
+			return fmt.Errorf("error deleting empty source tab: %w", err)
+		}
+
+		// Set active tab to destination
+		if srcWorkspaceId == destWorkspaceId {
+			err = SetActiveTab(ctx, srcWorkspaceId, destTabId)
+			if err != nil {
+				return fmt.Errorf("error setting active tab: %w", err)
+			}
+			SendActiveTabUpdate(ctx, srcWorkspaceId, destTabId)
+		} else {
+			// Cross-workspace: find window for source workspace and switch it to dest workspace
+			// If DeleteTab closed the last tab in the workspace, the window may already be closed,
+			// in which case DBFindWindowForWorkspaceId returns empty and we skip SwitchWorkspace.
+			// This is acceptable — the user will see the destination in its own window.
+			windowId, err := wstore.DBFindWindowForWorkspaceId(ctx, srcWorkspaceId)
+			if err == nil && windowId != "" {
+				_, err = SwitchWorkspace(ctx, windowId, destWorkspaceId)
+				if err != nil {
+					return fmt.Errorf("error switching workspace: %w", err)
+				}
+			} else if windowId == "" {
+				log.Printf("MoveBlock: source workspace %s has no window (likely closed), skipping workspace switch", srcWorkspaceId)
+			}
+		}
+	}
+
+	return nil
+}
+
 // returns the updated block count for the parent object
 func deleteBlockObj(ctx context.Context, blockId string) (int, error) {
 	return wstore.WithTxRtn(ctx, func(tx *wstore.TxWrap) (int, error) {
