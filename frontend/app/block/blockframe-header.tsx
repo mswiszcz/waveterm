@@ -131,7 +131,12 @@ async function handleHeaderContextMenu(
     const extraItems = viewModel?.getSettingsMenuItems?.();
     if (extraItems && extraItems.length > 0) menu.push({ type: "separator" }, ...extraItems);
     // Build "Move to..." submenu
-    const moveToSubmenu = await buildMoveToSubmenu(blockId);
+    let moveToSubmenu: ContextMenuItem[] = [];
+    try {
+        moveToSubmenu = await buildMoveToSubmenu(blockId);
+    } catch (e) {
+        console.error("error building move-to submenu:", e);
+    }
     if (moveToSubmenu.length > 0) {
         menu.push(
             { type: "separator" },

@@ -244,17 +244,23 @@ func MoveBlock(ctx context.Context, blockId string, destTabId string) error {
 	}
 
 	// Always queue destination insert action
-	QueueLayoutActionForTab(ctx, destTabId, waveobj.LayoutActionData{
+	err = QueueLayoutActionForTab(ctx, destTabId, waveobj.LayoutActionData{
 		ActionType: LayoutActionDataType_Insert,
 		BlockId:    blockId,
 	})
+	if err != nil {
+		log.Printf("MoveBlock: warning: could not queue layout insert for dest tab %s: %v", destTabId, err)
+	}
 
 	if srcTab != nil && len(srcTab.BlockIds) > 0 {
 		// Source tab still has blocks: queue remove action
-		QueueLayoutActionForTab(ctx, srcTabId, waveobj.LayoutActionData{
+		err = QueueLayoutActionForTab(ctx, srcTabId, waveobj.LayoutActionData{
 			ActionType: LayoutActionDataType_Remove,
 			BlockId:    blockId,
 		})
+		if err != nil {
+			log.Printf("MoveBlock: warning: could not queue layout remove for source tab %s: %v", srcTabId, err)
+		}
 	} else if srcTab != nil && len(srcTab.BlockIds) == 0 {
 		// Source tab is empty: delete it (no src layout action needed since layout is deleted with tab)
 		srcWorkspaceId, err := wstore.DBFindWorkspaceForTabId(ctx, srcTabId)
