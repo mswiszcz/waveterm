@@ -1662,17 +1662,25 @@ func (ws *WshServer) FocusBlockInWindowCommand(ctx context.Context, data wshrpc.
 		if err != nil {
 			return fmt.Errorf("error switching workspace: %w", err)
 		}
-	} else if needTabSwitch {
-		// Update active tab in the workspace
+		// After workspace switch, check if the active tab matches the target tab
 		workspace, err := wstore.DBMustGet[*waveobj.Workspace](ctx, wsId)
 		if err != nil {
-			return fmt.Errorf("error getting workspace: %w", err)
+			return fmt.Errorf("error getting workspace after switch: %w", err)
 		}
-		workspace.ActiveTabId = tabId
-		err = wstore.DBUpdate(ctx, workspace)
+		if workspace.ActiveTabId != tabId {
+			needTabSwitch = true
+		}
+	}
+	if needTabSwitch {
+		// Use SetActiveTab + SendActiveTabUpdate to properly notify the frontend
+		ctx = waveobj.ContextWithUpdates(ctx)
+		err = wcore.SetActiveTab(ctx, wsId, tabId)
 		if err != nil {
-			return fmt.Errorf("error updating workspace active tab: %w", err)
+			return fmt.Errorf("error setting active tab: %w", err)
 		}
+		wcore.SendActiveTabUpdate(ctx, wsId, tabId)
+		updates := waveobj.ContextGetUpdatesRtn(ctx)
+		wps.Broker.SendUpdateEvents(updates)
 	}
 
 	// Focus the window
