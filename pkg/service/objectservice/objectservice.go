@@ -112,6 +112,23 @@ func (svc *ObjectService) DeleteBlock(uiContext waveobj.UIContext, blockId strin
 	return waveobj.ContextGetUpdatesRtn(ctx), nil
 }
 
+func (svc *ObjectService) MoveBlock_Meta() tsgenmeta.MethodMeta {
+	return tsgenmeta.MethodMeta{
+		ArgNames: []string{"uiContext", "blockId", "destTabId"},
+	}
+}
+
+func (svc *ObjectService) MoveBlock(uiContext waveobj.UIContext, blockId string, destTabId string) (waveobj.UpdatesRtnType, error) {
+	ctx, cancelFn := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancelFn()
+	ctx = waveobj.ContextWithUpdates(ctx)
+	err := wcore.MoveBlock(ctx, blockId, destTabId)
+	if err != nil {
+		return nil, fmt.Errorf("error moving block: %w", err)
+	}
+	return waveobj.ContextGetUpdatesRtn(ctx), nil
+}
+
 func (svc *ObjectService) UpdateObjectMeta_Meta() tsgenmeta.MethodMeta {
 	return tsgenmeta.MethodMeta{
 		ArgNames: []string{"uiContext", "oref", "meta"},
