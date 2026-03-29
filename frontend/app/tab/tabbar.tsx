@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Tooltip } from "@/app/element/tooltip";
+import { openCommandPalette } from "@/app/store/commandpalette";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { useWaveEnv } from "@/app/waveenv/waveenv";
 import { WorkspaceLayoutModel } from "@/app/workspace/workspace-layout-model";
@@ -639,6 +640,16 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
                 </div>
             )}
             <WaveAIButton divRef={waveAIButtonRef} />
+            <Tooltip
+                content="Command Palette (⌘P)"
+                placement="bottom"
+                hideOnClick
+                divClassName="flex h-[22px] px-3.5 mb-1 items-center rounded-md mr-1 box-border cursor-pointer bg-hover hover:bg-hoverbg transition-colors text-[12px] text-secondary"
+                divStyle={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+                divOnClick={openCommandPalette}
+            >
+                <i className="fa-sharp fa-solid fa-magnifying-glass" />
+            </Tooltip>
             <Tooltip
                 content="Workspace Switcher"
                 placement="bottom"

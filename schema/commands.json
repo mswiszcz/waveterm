@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wavetermdev/waveterm/schema/commands",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Display name shown in the command palette"
+      },
+      "command": {
+        "type": "string",
+        "description": "Shell command to execute in a terminal block"
+      }
+    },
+    "required": ["name", "command"],
+    "additionalProperties": false
+  }
+}

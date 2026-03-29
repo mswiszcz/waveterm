@@ -21,5 +21,6 @@ export const DefaultFullConfig: FullConfigType = {
     waveai: waveaiJson as unknown as { [key: string]: AIModeConfigType },
     backgrounds: backgroundsJson as { [key: string]: BackgroundConfigType },
     keybindings: "[]",
+    commands: "[]",
     configerrors: [],
 };
