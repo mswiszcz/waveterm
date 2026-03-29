@@ -4,6 +4,7 @@
 import { App } from "@/app/app";
 import { loadMonaco } from "@/app/monaco/monaco-env";
 import { loadBadges } from "@/app/store/badge";
+import { loadPaletteHistory } from "@/app/store/commandpalette";
 import { GlobalModel } from "@/app/store/global-model";
 import {
     globalRefocus,
@@ -190,6 +191,7 @@ async function initWave(initOpts: WaveInitOpts) {
     }
     registerGlobalKeys();
     initKeybindingsWatcher();
+    loadPaletteHistory();
     registerElectronReinjectKeyHandler();
     registerControlShiftStateUpdateHandler();
     await loadMonaco();
