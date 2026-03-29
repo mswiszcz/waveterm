@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(git:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|json|go\\)$\")",
+      "Bash(find /Users/mswiszcz/Labs/waveterm/docs -name *.md)",
+      "Bash(find /Users/mswiszcz/Labs/waveterm/frontend -name *vtab* -type f)",
+      "Bash(/Users/mswiszcz/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/skills/brainstorming/scripts/start-server.sh --project-dir /Users/mswiszcz/Labs/waveterm)",
+      "Bash(grep -r \"registerKeybinding\\\\|registerShortcut\\\\|keybinding.*config\" /Users/mswiszcz/Labs/waveterm --include=*.ts --include=*.tsx)",
+      "Bash(gh api:*)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(x[''''path'''']\\) for x in data.get\\(''''tree'''',[]\\) if any\\(k in x[''''path''''].lower\\(\\) for k in [''''color'''',''''palette'''',''''theme'''',''''ansi'''']\\)]\")",
+      "WebFetch(domain:github.com)",
+      "Bash(gh repo:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.warp.dev)",
+      "Bash(gh search:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|json\\)$\")",
+      "Bash(/Users/mswiszcz/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/scripts/start-server.sh --project-dir /Users/mswiszcz/Labs/waveterm)",
+      "Bash(ls /Users/mswiszcz/Labs/waveterm/cmd/generate*/)",
+      "Bash(bash /Users/mswiszcz/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/skills/brainstorming/scripts/start-server.sh --project-dir /Users/mswiszcz/Labs/waveterm)",
+      "Bash(go run:*)",
+      "Read(//Users/mswiszcz/.claude/**)",
+      "Bash(ls /Users/mswiszcz/.claude/projects/-Users-mswiszcz-Labs-waveterm/settings*.json)"
+    ]
+  }
+}
