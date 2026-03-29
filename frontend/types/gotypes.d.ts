@@ -992,6 +992,12 @@ declare global {
         append?: boolean;
     };
 
+    // wshrpc.FocusBlockInWindowData
+    type FocusBlockInWindowData = {
+        blockid?: string;
+        switch?: boolean;
+    };
+
     // wshrpc.FocusedBlockData
     type FocusedBlockData = {
         blockid: string;
@@ -1530,6 +1536,12 @@ declare global {
         "file:path"?: string;
         "file:name"?: string;
         "url:url"?: string;
+    };
+
+    // wshrpc.SwitchWorkspaceData
+    type SwitchWorkspaceData = {
+        windowid: string;
+        workspaceid: string;
     };
 
     // telemetrydata.TEvent

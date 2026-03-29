@@ -390,6 +390,12 @@ export class RpcApiType {
         return client.wshRpcCall("findgitbash", data, opts);
     }
 
+    // command "focusblockinwindow" [call]
+    FocusBlockInWindowCommand(client: WshClient, data: FocusBlockInWindowData, opts?: RpcOpts): Promise<void> {
+        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "focusblockinwindow", data, opts);
+        return client.wshRpcCall("focusblockinwindow", data, opts);
+    }
+
     // command "focuswindow" [call]
     FocusWindowCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<void> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "focuswindow", data, opts);
@@ -928,6 +934,12 @@ export class RpcApiType {
 	StreamWaveAiCommand(client: WshClient, data: WaveAIStreamRequest, opts?: RpcOpts): AsyncGenerator<WaveAIPacketType, void, boolean> {
         if (this.mockClient) return this.mockClient.mockWshRpcStream(client, "streamwaveai", data, opts);
         return client.wshRpcStream("streamwaveai", data, opts);
+    }
+
+    // command "switchworkspace" [call]
+    SwitchWorkspaceCommand(client: WshClient, data: SwitchWorkspaceData, opts?: RpcOpts): Promise<void> {
+        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "switchworkspace", data, opts);
+        return client.wshRpcCall("switchworkspace", data, opts);
     }
 
     // command "termgetscrollbacklines" [call]
