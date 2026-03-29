@@ -1021,6 +1021,7 @@ declare global {
         bookmarks: {[key: string]: WebBookmark};
         waveai: {[key: string]: AIModeConfigType};
         keybindings: string;
+        commands: string;
         configerrors: ConfigError[];
     };
 
