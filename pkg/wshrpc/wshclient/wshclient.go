@@ -388,6 +388,12 @@ func FindGitBashCommand(w *wshutil.WshRpc, data bool, opts *wshrpc.RpcOpts) (str
 	return resp, err
 }
 
+// command "focusblockinwindow", wshserver.FocusBlockInWindowCommand
+func FocusBlockInWindowCommand(w *wshutil.WshRpc, data wshrpc.FocusBlockInWindowData, opts *wshrpc.RpcOpts) error {
+	_, err := sendRpcRequestCallHelper[any](w, "focusblockinwindow", data, opts)
+	return err
+}
+
 // command "focuswindow", wshserver.FocusWindowCommand
 func FocusWindowCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) error {
 	_, err := sendRpcRequestCallHelper[any](w, "focuswindow", data, opts)
@@ -921,6 +927,12 @@ func StreamTestCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) chan wshrpc.Resp
 // command "streamwaveai", wshserver.StreamWaveAiCommand
 func StreamWaveAiCommand(w *wshutil.WshRpc, data wshrpc.WaveAIStreamRequest, opts *wshrpc.RpcOpts) chan wshrpc.RespOrErrorUnion[wshrpc.WaveAIPacketType] {
 	return sendRpcRequestResponseStreamHelper[wshrpc.WaveAIPacketType](w, "streamwaveai", data, opts)
+}
+
+// command "switchworkspace", wshserver.SwitchWorkspaceCommand
+func SwitchWorkspaceCommand(w *wshutil.WshRpc, data wshrpc.SwitchWorkspaceData, opts *wshrpc.RpcOpts) error {
+	_, err := sendRpcRequestCallHelper[any](w, "switchworkspace", data, opts)
+	return err
 }
 
 // command "termgetscrollbacklines", wshserver.TermGetScrollbackLinesCommand

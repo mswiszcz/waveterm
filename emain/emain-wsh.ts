@@ -60,6 +60,14 @@ export class ElectronWshClientType extends WshClient {
         ww.focus();
     }
 
+    async handle_switchworkspace(rh: RpcResponseHelper, data: SwitchWorkspaceData) {
+        const ww = getWaveWindowById(data.windowid);
+        if (ww == null) {
+            throw new Error(`window ${data.windowid} not found`);
+        }
+        await ww.switchWorkspace(data.workspaceid);
+    }
+
     async handle_electronencrypt(
         rh: RpcResponseHelper,
         data: CommandElectronEncryptData

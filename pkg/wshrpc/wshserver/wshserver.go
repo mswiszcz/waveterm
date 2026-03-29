@@ -54,6 +54,7 @@ import (
 	"github.com/wavetermdev/waveterm/pkg/wcore"
 	"github.com/wavetermdev/waveterm/pkg/wps"
 	"github.com/wavetermdev/waveterm/pkg/wshrpc"
+	"github.com/wavetermdev/waveterm/pkg/wshrpc/wshclient"
 	"github.com/wavetermdev/waveterm/pkg/wshutil"
 	"github.com/wavetermdev/waveterm/pkg/wsl"
 	"github.com/wavetermdev/waveterm/pkg/wslconn"
@@ -1577,4 +1578,126 @@ func (ws *WshServer) JobControllerDetachJobCommand(ctx context.Context, jobId st
 
 func (ws *WshServer) BlockJobStatusCommand(ctx context.Context, blockId string) (*wshrpc.BlockJobStatusData, error) {
 	return jobcontroller.GetBlockJobStatus(ctx, blockId)
+}
+
+func (ws *WshServer) FocusBlockInWindowCommand(ctx context.Context, data wshrpc.FocusBlockInWindowData) error {
+	// No block ID: just focus the most recently active window
+	if data.BlockId == "" {
+		clientData, err := wcore.GetClientData(ctx)
+		if err != nil {
+			return fmt.Errorf("error getting client data: %w", err)
+		}
+		if len(clientData.WindowIds) == 0 {
+			return fmt.Errorf("no windows found")
+		}
+		windowId := clientData.WindowIds[0]
+		client := wshclient.GetBareRpcClient()
+		return wshclient.FocusWindowCommand(client, windowId, &wshrpc.RpcOpts{Route: wshutil.ElectronRoute})
+	}
+
+	// Validate block exists
+	_, err := wstore.DBMustGet[*waveobj.Block](ctx, data.BlockId)
+	if err != nil {
+		return fmt.Errorf("block not found: %w", err)
+	}
+
+	// Resolve block → tab → workspace → window
+	tabId, err := wstore.DBFindTabForBlockId(ctx, data.BlockId)
+	if err != nil {
+		return fmt.Errorf("error finding tab for block: %w", err)
+	}
+	if tabId == "" {
+		return fmt.Errorf("block %s is not in any tab", data.BlockId)
+	}
+
+	wsId, err := wstore.DBFindWorkspaceForTabId(ctx, tabId)
+	if err != nil {
+		return fmt.Errorf("error finding workspace for tab: %w", err)
+	}
+	if wsId == "" {
+		return fmt.Errorf("tab %s is not in any workspace", tabId)
+	}
+
+	windowId, err := wstore.DBFindWindowForWorkspaceId(ctx, wsId)
+	if err != nil {
+		return fmt.Errorf("error finding window for workspace: %w", err)
+	}
+	if windowId == "" {
+		return fmt.Errorf("workspace %s has no window", wsId)
+	}
+
+	// Get the window to check current workspace
+	window, err := wstore.DBMustGet[*waveobj.Window](ctx, windowId)
+	if err != nil {
+		return fmt.Errorf("error getting window: %w", err)
+	}
+
+	// Check if workspace switch is needed
+	needWorkspaceSwitch := window.WorkspaceId != wsId
+	if needWorkspaceSwitch && !data.Switch {
+		return fmt.Errorf("block is on a different workspace, use --switch to switch to it")
+	}
+
+	// Check if tab switch is needed (within the target workspace)
+	needTabSwitch := false
+	if !needWorkspaceSwitch {
+		workspace, err := wstore.DBMustGet[*waveobj.Workspace](ctx, wsId)
+		if err != nil {
+			return fmt.Errorf("error getting workspace: %w", err)
+		}
+		needTabSwitch = workspace.ActiveTabId != tabId
+		if needTabSwitch && !data.Switch {
+			return fmt.Errorf("block is on a different tab, use --switch to switch to it")
+		}
+	}
+
+	client := wshclient.GetBareRpcClient()
+
+	// Switch workspace if needed (this also handles tab loading)
+	if needWorkspaceSwitch {
+		err = wshclient.SwitchWorkspaceCommand(client, wshrpc.SwitchWorkspaceData{
+			WindowId:    windowId,
+			WorkspaceId: wsId,
+		}, &wshrpc.RpcOpts{Route: wshutil.ElectronRoute})
+		if err != nil {
+			return fmt.Errorf("error switching workspace: %w", err)
+		}
+		// After workspace switch, check if the active tab matches the target tab
+		workspace, err := wstore.DBMustGet[*waveobj.Workspace](ctx, wsId)
+		if err != nil {
+			return fmt.Errorf("error getting workspace after switch: %w", err)
+		}
+		if workspace.ActiveTabId != tabId {
+			needTabSwitch = true
+		}
+	}
+	if needTabSwitch {
+		// Use SetActiveTab + SendActiveTabUpdate to properly notify the frontend
+		ctx = waveobj.ContextWithUpdates(ctx)
+		err = wcore.SetActiveTab(ctx, wsId, tabId)
+		if err != nil {
+			return fmt.Errorf("error setting active tab: %w", err)
+		}
+		wcore.SendActiveTabUpdate(ctx, wsId, tabId)
+		updates := waveobj.ContextGetUpdatesRtn(ctx)
+		wps.Broker.SendUpdateEvents(updates)
+	}
+
+	// Focus the window
+	err = wshclient.FocusWindowCommand(client, windowId, &wshrpc.RpcOpts{Route: wshutil.ElectronRoute})
+	if err != nil {
+		return fmt.Errorf("error focusing window: %w", err)
+	}
+
+	// Focus the block within the tab
+	tabRoute := fmt.Sprintf("tab:%s", tabId)
+	err = wshclient.SetBlockFocusCommand(client, data.BlockId, &wshrpc.RpcOpts{
+		Route:   tabRoute,
+		Timeout: 2000,
+	})
+	if err != nil {
+		return fmt.Errorf("error focusing block: %w", err)
+	}
+
+	return nil
 }

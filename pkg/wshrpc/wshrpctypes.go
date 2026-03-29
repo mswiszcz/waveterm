@@ -135,6 +135,7 @@ type WshRpcInterface interface {
 	WebSelectorCommand(ctx context.Context, data CommandWebSelectorData) ([]string, error)
 	NotifyCommand(ctx context.Context, notificationOptions WaveNotificationOptions) error
 	FocusWindowCommand(ctx context.Context, windowId string) error
+	SwitchWorkspaceCommand(ctx context.Context, data SwitchWorkspaceData) error
 	ElectronEncryptCommand(ctx context.Context, data CommandElectronEncryptData) (*CommandElectronEncryptRtnData, error)
 	ElectronDecryptCommand(ctx context.Context, data CommandElectronDecryptData) (*CommandElectronDecryptRtnData, error)
 	NetworkOnlineCommand(ctx context.Context) (bool, error)
@@ -168,6 +169,7 @@ type WshRpcInterface interface {
 	// block focus
 	SetBlockFocusCommand(ctx context.Context, blockId string) error
 	GetFocusedBlockDataCommand(ctx context.Context) (*FocusedBlockData, error)
+	FocusBlockInWindowCommand(ctx context.Context, data FocusBlockInWindowData) error
 
 	// rtinfo
 	GetRTInfoCommand(ctx context.Context, data CommandGetRTInfoData) (*waveobj.ObjRTInfo, error)
@@ -496,6 +498,16 @@ type WaveNotificationOptions struct {
 	Title  string `json:"title,omitempty"`
 	Body   string `json:"body,omitempty"`
 	Silent bool   `json:"silent,omitempty"`
+}
+
+type FocusBlockInWindowData struct {
+	BlockId string `json:"blockid,omitempty"`
+	Switch  bool   `json:"switch,omitempty"`
+}
+
+type SwitchWorkspaceData struct {
+	WindowId    string `json:"windowid"`
+	WorkspaceId string `json:"workspaceid"`
 }
 
 type VDomUrlRequestData struct {
