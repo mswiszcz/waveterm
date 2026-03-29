@@ -237,19 +237,26 @@ func MoveBlock(ctx context.Context, blockId string, destTabId string) error {
 		return fmt.Errorf("error moving block: %w", err)
 	}
 
-	// Queue layout actions: remove from source, insert into destination
-	QueueLayoutActionForTab(ctx, srcTabId, waveobj.LayoutActionData{
-		ActionType: LayoutActionDataType_Remove,
-		BlockId:    blockId,
-	})
+	// Re-fetch source tab to check remaining blocks
+	srcTab, err := wstore.DBGet[*waveobj.Tab](ctx, srcTabId)
+	if err != nil {
+		log.Printf("MoveBlock: warning: could not re-fetch source tab %s: %v", srcTabId, err)
+	}
+
+	// Always queue destination insert action
 	QueueLayoutActionForTab(ctx, destTabId, waveobj.LayoutActionData{
 		ActionType: LayoutActionDataType_Insert,
 		BlockId:    blockId,
 	})
 
-	// Handle empty source tab cleanup
-	srcTab, _ := wstore.DBGet[*waveobj.Tab](ctx, srcTabId)
-	if srcTab != nil && len(srcTab.BlockIds) == 0 {
+	if srcTab != nil && len(srcTab.BlockIds) > 0 {
+		// Source tab still has blocks: queue remove action
+		QueueLayoutActionForTab(ctx, srcTabId, waveobj.LayoutActionData{
+			ActionType: LayoutActionDataType_Remove,
+			BlockId:    blockId,
+		})
+	} else if srcTab != nil && len(srcTab.BlockIds) == 0 {
+		// Source tab is empty: delete it (no src layout action needed since layout is deleted with tab)
 		srcWorkspaceId, err := wstore.DBFindWorkspaceForTabId(ctx, srcTabId)
 		if err != nil {
 			return fmt.Errorf("error finding workspace for source tab: %w", err)
@@ -273,12 +280,17 @@ func MoveBlock(ctx context.Context, blockId string, destTabId string) error {
 			SendActiveTabUpdate(ctx, srcWorkspaceId, destTabId)
 		} else {
 			// Cross-workspace: find window for source workspace and switch it to dest workspace
+			// If DeleteTab closed the last tab in the workspace, the window may already be closed,
+			// in which case DBFindWindowForWorkspaceId returns empty and we skip SwitchWorkspace.
+			// This is acceptable — the user will see the destination in its own window.
 			windowId, err := wstore.DBFindWindowForWorkspaceId(ctx, srcWorkspaceId)
 			if err == nil && windowId != "" {
 				_, err = SwitchWorkspace(ctx, windowId, destWorkspaceId)
 				if err != nil {
 					return fmt.Errorf("error switching workspace: %w", err)
 				}
+			} else if windowId == "" {
+				log.Printf("MoveBlock: source workspace %s has no window (likely closed), skipping workspace switch", srcWorkspaceId)
 			}
 		}
 	}
