@@ -12,10 +12,6 @@
       "command": {
         "type": "string",
         "description": "Shell command to execute in a terminal block"
-      },
-      "icon": {
-        "type": "string",
-        "description": "Optional icon identifier (Font Awesome class name)"
       }
     },
     "required": ["name", "command"],

@@ -54,7 +54,7 @@ function getAppCommandItems(): CommandPaletteItem[] {
             category: "app",
             keybinding: formatKeybinding(action.defaultKeys),
             handler: () => {
-                actionHandler(null as any);
+                actionHandler({} as WaveKeyboardEvent);
             },
         });
     }
