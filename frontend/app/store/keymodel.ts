@@ -28,7 +28,7 @@ import { isWindows } from "@/util/platformutil";
 import { CHORD_TIMEOUT } from "@/util/sharedconst";
 import { fireAndForget } from "@/util/util";
 import * as jotai from "jotai";
-import { openCommandPalette } from "@/app/store/commandpalette";
+import { closeCommandPalette, openCommandPalette } from "@/app/store/commandpalette";
 import { modalsModel } from "./modalmodel";
 import { isBuilderWindow, isTabWindow } from "./windowtype";
 
@@ -810,7 +810,11 @@ const defaultActions: ActionDef[] = [
         id: "app:commandpalette",
         defaultKeys: ["Cmd:p"],
         handler: () => {
-            openCommandPalette();
+            if (modalsModel.isModalOpen("CommandPalette")) {
+                closeCommandPalette();
+            } else {
+                openCommandPalette();
+            }
             return true;
         },
     },

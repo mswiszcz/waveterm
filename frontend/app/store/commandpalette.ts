@@ -1,6 +1,7 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { FocusManager } from "@/app/store/focusManager";
 import { atoms, createBlock, getBlockComponentModel, globalStore } from "@/app/store/global";
 import { modalsModel } from "@/app/store/modalmodel";
 import { RpcApi } from "@/app/store/wshclientapi";
@@ -230,5 +231,7 @@ export function openCommandPalette(): void {
 }
 
 export function closeCommandPalette(): void {
-    modalsModel.popModal();
+    modalsModel.popModal(() => {
+        FocusManager.getInstance().refocusNode();
+    });
 }
