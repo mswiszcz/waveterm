@@ -389,3 +389,15 @@ export function bufferLinesToText(buffer: TermTypes.IBuffer, startIndex: number,
 
     return lines;
 }
+
+/**
+ * Escapes a file path for safe use in a shell command.
+ * Wraps the path in single quotes and escapes embedded single quotes using the '\'' pattern.
+ * This works safely in bash, zsh, and fish shells.
+ *
+ * @param path - The file path to escape
+ * @returns The escaped path safe for shell use
+ */
+export function escapePathForShell(path: string): string {
+    return "'" + path.replace(/'/g, "'\\''") + "'";
+}

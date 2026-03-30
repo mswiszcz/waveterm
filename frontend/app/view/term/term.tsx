@@ -13,7 +13,7 @@ import { waveEventSubscribeSingle } from "@/app/store/wps";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import type { TermViewModel } from "@/app/view/term/term-model";
-import { atoms, getOverrideConfigAtom, getSettingsPrefixAtom, WOS } from "@/store/global";
+import { atoms, getApi, getOverrideConfigAtom, getSettingsPrefixAtom, WOS } from "@/store/global";
 import { fireAndForget, useAtomValueSafe } from "@/util/util";
 import { computeBgStyleFromMeta } from "@/util/waveutil";
 import { ISearchOptions } from "@xterm/addon-search";
@@ -24,7 +24,7 @@ import * as React from "react";
 import { TermLinkTooltip } from "./term-tooltip";
 import { TermStickers } from "./termsticker";
 import { TermThemeUpdater } from "./termtheme";
-import { computeTheme, normalizeCursorStyle } from "./termutil";
+import { computeTheme, escapePathForShell, normalizeCursorStyle } from "./termutil";
 import { TermWrap } from "./termwrap";
 import "./xterm.css";
 
@@ -181,6 +181,7 @@ const TermToolbarVDomNode = ({ blockId, model }: TerminalViewProps) => {
 const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => {
     const viewRef = React.useRef<HTMLDivElement>(null);
     const connectElemRef = React.useRef<HTMLDivElement>(null);
+    const [isDragOver, setIsDragOver] = React.useState(false);
     const [termWrapInst, setTermWrapInst] = React.useState<TermWrap | null>(null);
     const [blockData] = WOS.useWaveObjectValue<Block>(WOS.makeORef("block", blockId));
     const termSettingsAtom = getSettingsPrefixAtom("term");
@@ -384,9 +385,72 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
         [model]
     );
 
+    const handleDragOver = React.useCallback((e: React.DragEvent) => {
+        if (!e.dataTransfer.types.includes("Files")) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+    }, []);
+
+    const handleDragEnter = React.useCallback((e: React.DragEvent) => {
+        if (!e.dataTransfer.types.includes("Files")) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    }, []);
+
+    const handleDragLeave = React.useCallback((e: React.DragEvent) => {
+        if ((e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
+            return;
+        }
+        setIsDragOver(false);
+    }, []);
+
+    const handleDrop = React.useCallback(
+        (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragOver(false);
+            const files = e.dataTransfer.files;
+            if (files.length === 0) {
+                return;
+            }
+            const paths: string[] = [];
+            for (let i = 0; i < files.length; i++) {
+                try {
+                    const nativePath = getApi().getPathForFile(files[i]);
+                    if (nativePath) {
+                        paths.push(escapePathForShell(nativePath));
+                    }
+                } catch {
+                    // Skip files without a native path (e.g., synthetic File objects)
+                }
+            }
+            if (paths.length > 0) {
+                model.termRef.current?.handleTermData(paths.join(" "));
+            }
+        },
+        [model]
+    );
+
     return (
-        <div className={clsx("view-term", "term-mode-" + termMode)} ref={viewRef} onContextMenu={handleContextMenu}>
+        <div
+            className={clsx("view-term", "term-mode-" + termMode)}
+            ref={viewRef}
+            onContextMenu={handleContextMenu}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
             {termBg && <div key="term-bg" className="absolute inset-0 z-0 pointer-events-none" style={termBg} />}
+            {isDragOver && (
+                <div className="term-drag-overlay" />
+            )}
             <TermResyncHandler blockId={blockId} model={model} />
             <TermThemeUpdater blockId={blockId} model={model} termRef={model.termRef} />
             <TermStickers config={stickerConfig} />

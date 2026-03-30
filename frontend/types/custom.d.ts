@@ -136,6 +136,7 @@ declare global {
         doRefresh: () => void; // do-refresh
         saveTextFile: (fileName: string, content: string) => Promise<boolean>; // save-text-file
         setIsActive: () => Promise<void>; // set-is-active
+        getPathForFile: (file: File) => string; // webUtils.getPathForFile
     };
 
     type ElectronContextMenuItem = {
