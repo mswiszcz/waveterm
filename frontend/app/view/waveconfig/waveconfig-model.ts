@@ -318,13 +318,20 @@ export class WaveConfigViewModel implements ViewModel {
 
         try {
             const fullPath = `${this.configDir}/${file.path}`;
-            const fileData = await this.env.rpc.FileReadCommand(TabRpcClient, {
-                info: { path: fullPath },
-            });
-            const content = fileData?.data64 ? base64ToString(fileData.data64) : "";
+            let content = "";
+            try {
+                const fileData = await this.env.rpc.FileReadCommand(TabRpcClient, {
+                    info: { path: fullPath },
+                });
+                content = fileData?.data64 ? base64ToString(fileData.data64) : "";
+            } catch {
+                // File doesn't exist yet — treat as empty, will be created on first save
+                content = "";
+            }
             globalStore.set(this.originalContentAtom, content);
+            const emptyDefault = file.allowArray ? "[\n\n]" : "{\n\n}";
             if (content.trim() === "") {
-                globalStore.set(this.fileContentAtom, "{\n\n}");
+                globalStore.set(this.fileContentAtom, emptyDefault);
             } else {
                 globalStore.set(this.fileContentAtom, content);
             }
