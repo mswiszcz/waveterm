@@ -401,6 +401,56 @@ This will delete the block with the specified id.
 
 ---
 
+## focuswindow
+
+<VersionBadge version="v0.14.2" />
+
+The `focuswindow` command brings a Wave Terminal window to the foreground and optionally focuses a specific block. It can navigate across tabs and workspaces to reach the target block.
+
+```sh
+wsh focuswindow [-b blockid] [--switch]
+```
+
+When called without a block ID, it brings the current (or most recently active) Wave Terminal window to the foreground. When a block ID is provided, it also focuses that specific block within the window. If the block is on a different tab or workspace, use the `--switch` flag to allow automatic navigation.
+
+The block ID is read from the `-b` flag or falls back to the `$WAVETERM_BLOCKID` environment variable (automatically set inside every Wave Terminal block).
+
+Flags:
+
+- `-b blockid` - target a specific block to focus (same format as `getmeta`)
+- `--switch` - allow switching workspace and/or tab if the target block is not on the currently active tab
+
+Examples:
+
+```sh
+# Bring the current Wave Terminal window to the foreground
+wsh focuswindow
+
+# Focus a specific block in the current tab
+wsh focuswindow -b 2
+
+# Focus a block that may be on a different tab or workspace
+wsh focuswindow -b d6ff4966-231a-4074-b78a-20acc7226b41 --switch
+
+# Use from an external script (uses $WAVETERM_BLOCKID if set)
+wsh focuswindow
+```
+
+| Scenario | Result |
+|----------|--------|
+| No block ID (external call) | Focus most recently active window |
+| No block ID (inside Wave) | Focus current block's window |
+| Block on active tab | Focus window + focus block |
+| Block on different tab/workspace, no `--switch` | Error with hint to use `--switch` |
+| Block on different tab/workspace, `--switch` | Switch workspace/tab + focus window + focus block |
+| Block not found | Error: block not found |
+
+:::tip
+This command is useful in external scripts and automation — for example, bringing Wave Terminal to the foreground after a long-running process completes, or focusing a specific monitoring block from a keyboard shortcut.
+:::
+
+---
+
 ## ssh
 
 ```sh
