@@ -40,11 +40,15 @@ function getAppCommandItems(): CommandPaletteItem[] {
     const items: CommandPaletteItem[] = [];
     const actionDefs = getActionDefs();
 
+    const hiddenPattern = /^(generic:cancel|block:switchto\d+|tab:switchto\d+)$/;
     for (const action of actionDefs) {
         if (action.id.includes("chord") && action.id !== "block:splitchord") {
             continue;
         }
         if (action.id === "app:commandpalette") {
+            continue;
+        }
+        if (hiddenPattern.test(action.id)) {
             continue;
         }
         const actionHandler = action.handler;
