@@ -4,7 +4,7 @@
 import { WindowService } from "@/app/store/services";
 import { RpcResponseHelper, WshClient } from "@/app/store/wshclient";
 import { RpcApi } from "@/app/store/wshclientapi";
-import { Notification, net, safeStorage, shell } from "electron";
+import { Notification, app, net, safeStorage, shell } from "electron";
 import { getResolvedUpdateChannel } from "emain/updater";
 import { unamePlatform } from "./emain-platform";
 import { getWebContentsByBlockId, webGetSelector } from "./emain-web";
@@ -57,6 +57,7 @@ export class ElectronWshClientType extends WshClient {
                 isPrimaryStartupWindow: false,
             });
         }
+        app.focus({ steal: true });
         ww.focus();
     }
 
