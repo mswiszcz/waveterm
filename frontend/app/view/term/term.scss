@@ -19,6 +19,16 @@
     overflow: hidden;
     position: relative;
 
+    .term-drag-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.08);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        pointer-events: none;
+        z-index: var(--zindex-term-drag-overlay);
+    }
+
     .term-header {
         display: flex;
         flex-direction: row;
