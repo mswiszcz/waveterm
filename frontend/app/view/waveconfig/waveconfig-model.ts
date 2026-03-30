@@ -99,6 +99,14 @@ function makeConfigFiles(isWindows: boolean): ConfigFile[] {
             // visualComponent: WaveAIVisualContent,
         },
         {
+            name: "Commands",
+            path: "commands.json",
+            language: "json",
+            description: "Command palette commands",
+            hasJsonView: true,
+            allowArray: true,
+        },
+        {
             name: "Tab Backgrounds",
             path: "backgrounds.json",
             language: "json",
